@@ -4,5 +4,6 @@ __pycache__
 
 # assignment 1
 assignment1/cs231n/datasets/cifar-10-batches-py
+assignment1/cs231n/datasets/cifar-10-batches-py.tar.gz
 assignment1/a1.zip
 assignment1/assignment.pdf
