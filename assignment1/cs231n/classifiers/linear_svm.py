@@ -37,6 +37,8 @@ def svm_loss_naive(W, X, y, reg):
             margin = scores[j] - correct_class_score + 1  # note delta = 1
             if margin > 0:
                 loss += margin
+                dW[:, j] += X[i, :] * (1)
+                dW[:, y[i]] += X[i, :] * (-1)
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
@@ -54,8 +56,9 @@ def svm_loss_naive(W, X, y, reg):
     # code above to compute the gradient.                                       #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    
+    dW /= num_train
+    dW += reg * 2 * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -78,8 +81,13 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
-
+    num_train = X.shape[0]
+    scores = X @ W  # (num_train x D) * (D, num_cls) = (num_train x num_cls)
+    correct_class_score = np.expand_dims(scores[range(num_train), y], -1)
+    margins = np.maximum(0, scores - correct_class_score + 1)
+    margins[range(num_train), y] -= 1  # because shouldn't add (scores[:, y] - scores[:, y] + 1)
+    loss = (np.sum(margins) / num_train) + reg * np.sum(W**2)
+ 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     #############################################################################
@@ -93,7 +101,9 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    M = (margins > 0).astype(int)   # (num_train x num_cls)
+    M[range(num_train), y] -= np.sum(M, axis=1)
+    dW += X.T @ M /num_train + reg * 2 * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
