@@ -34,7 +34,28 @@ def softmax_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dW = np.zeros(W.shape)  # initialize the gradient as zero
+    num_classes = W.shape[1]
+    num_train = X.shape[0]
+
+    # compute the loss and the gradient
+    num_classes = W.shape[1]
+    num_train = X.shape[0]
+    loss = 0.0
+    for i in range(num_train):
+        f = X[i].dot(W)
+        fshift = f - np.max(f)  # for robustness
+        loss -= fshift[y[i]]
+        dW[:,y[i]] -= X[i,:] 
+        sumexp = np.sum(np.exp(fshift))
+        for j in range(num_classes):
+            dfj = np.exp(fshift[j]) / sumexp
+            dW[:,j] += X[i,:] * dfj
+        loss += np.log(sumexp)
+    loss /= num_train
+    loss += reg * np.sum(W**2)
+    dW /= num_train
+    dW += 2 * reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -59,7 +80,18 @@ def softmax_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    num_train = X.shape[0]
+    F = X @ W                               # (N x D) @ (D x C) = (N, C)
+
+    Fshift = F - np.max(F)                  # for robustness
+    Fshiftexp = np.exp(Fshift)                 
+    sumexp = np.sum(Fshiftexp, axis=1, keepdims=True)
+    softmax = Fshiftexp / sumexp
+    loss = np.mean(-Fshift[range(num_train), y] + np.log(sumexp))
+    loss = loss + reg * np.sum(W**2)
+
+    softmax[range(num_train), y] -= 1  # grad for -Fshift[range(num_train), y]
+    dW = X.T @ softmax / num_train + 2 * reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
