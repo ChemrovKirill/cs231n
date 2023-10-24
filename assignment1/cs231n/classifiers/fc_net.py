@@ -12,7 +12,7 @@ class TwoLayerNet(object):
     softmax loss that uses a modular layer design. We assume an input dimension
     of D, a hidden dimension of H, and perform classification over C classes.
 
-    The architecure should be affine - relu - affine - softmax.
+    The architecture should be affine - relu - affine - softmax.
 
     Note that this class does not implement gradient descent; instead, it
     will interact with a separate Solver object that is responsible for running
@@ -55,7 +55,12 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.params = {
+          'W1': np.random.randn(input_dim, hidden_dim) * weight_scale,
+          'b1': np.zeros(hidden_dim),
+          'W2': np.random.randn(hidden_dim, num_classes) * weight_scale,
+          'b2': np.zeros(num_classes)
+        }
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -87,8 +92,12 @@ class TwoLayerNet(object):
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        
+        W1, b1, W2, b2 = self.params.values()
 
-        pass
+        out1, cache1 = affine_forward(X, W1, b1)
+        out2, cache2 = relu_forward(out1)
+        scores, cache3 = affine_forward(out2, W2, b2)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -112,7 +121,15 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dscores = softmax_loss(scores, y)
+        loss += 0.5 * self.reg * np.sum(W1**2)
+        loss += 0.5 * self.reg * np.sum(W2**2)
+        dout3, dW2, db2 = affine_backward(dscores, cache3)
+        dout2 = relu_backward(dout3, cache2)
+        dout1, dW1, db1 = affine_backward(dout2, cache1)
+        dW1 += self.reg * W1 
+        dW2 += self.reg * W2
+        grads = {'W1': dW1, 'b1': db1, 'W2': dW2, 'b2': db2}
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
