@@ -198,8 +198,16 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        sample_mean = np.mean(x, axis=0)
+        sample_var = np.var(x, axis=0)
+        std = np.sqrt(sample_var + eps)
+        x_norm = (x - sample_mean) / std
+        out = gamma * x_norm + beta
 
+        running_mean = momentum * running_mean + (1 - momentum) * sample_mean
+        running_var = momentum * running_var + (1 - momentum) * sample_var
+
+        cache = x, sample_mean, std, gamma, x_norm
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
         #                           END OF YOUR CODE                          #
@@ -213,7 +221,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        x_norm = (x - running_mean) / np.sqrt(running_var + eps)
+        out = gamma * x_norm + beta
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -255,7 +264,27 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, mean, std, gamma, x_norm = cache
+    N,D = dout.shape
+
+    dbeta = np.sum(dout, axis=0)
+    dgamma_x = dout
+    
+    dgamma = np.sum(dgamma_x * x_norm, axis=0)
+    dx_norm = dgamma_x * gamma
+
+    dstd_inv = np.sum(dx_norm * (x - mean), axis=0)
+    dxmmean = dx_norm / std
+    
+    dstd = -1 / std**2 * dstd_inv
+    dvar = 1 / std / 2 * dstd
+    dsum = 1/N * np.ones((N,D)) * dvar
+    dxmmean2 = 2 * (x - mean) * dsum
+
+    dx1 = dxmmean + dxmmean2
+    dmean = - np.sum(dx1, axis=0)
+    dx2 = 1/N * np.ones((N,D)) * dmean
+    dx = dx1 + dx2
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -290,7 +319,14 @@ def batchnorm_backward_alt(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, mean, std, gamma, x_norm = cache
+    N, D = dout.shape
+    
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(dout * x_norm, axis=0)
+    
+    dx = dout * gamma / (N * std)
+    dx = N*dx  - np.sum(dx*x_norm, axis=0) * x_norm - np.sum(dx, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -336,7 +372,13 @@ def layernorm_forward(x, gamma, beta, ln_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    mean = np.mean(x, axis=1, keepdims=True)
+    var = np.var(x, axis=1, keepdims=True)
+    std = np.sqrt(var + eps)
+    x_norm = (x - mean) / std
+    out = gamma * x_norm + beta
+
+    cache = x, mean, std, gamma, x_norm
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -371,7 +413,15 @@ def layernorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, mean, std, gamma, x_norm = cache
+    N, D = dout.shape
+    
+    dbeta = np.sum(dout, axis=0, keepdims=True)
+    dgamma = np.sum(dout * x_norm, axis=0, keepdims=True)
+    
+    dx = dout * gamma / (D * std)
+    dx = D*dx  - np.sum(dx*x_norm, axis=1, keepdims=True) * x_norm - \
+          np.sum(dx, axis=1, keepdims=True)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
